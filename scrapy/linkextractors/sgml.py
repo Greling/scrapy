@@ -1,12 +1,14 @@
 """
 SGMLParser-based Link extractors
 """
+import six
 from six.moves.urllib.parse import urljoin
 import warnings
 from sgmllib import SGMLParser
 
 from w3lib.url import safe_url_string
-from scrapy.selector import Selector
+from w3lib.html import strip_html5_whitespace
+
 from scrapy.link import Link
 from scrapy.linkextractors import FilteringLinkExtractor
 from scrapy.utils.misc import arg_to_iter, rel_has_nofollow
@@ -17,7 +19,8 @@ from scrapy.exceptions import ScrapyDeprecationWarning
 
 class BaseSgmlLinkExtractor(SGMLParser):
 
-    def __init__(self, tag="a", attr="href", unique=False, process_value=None):
+    def __init__(self, tag="a", attr="href", unique=False, process_value=None,
+                 strip=True):
         warnings.warn(
             "BaseSgmlLinkExtractor is deprecated and will be removed in future releases. "
             "Please use scrapy.linkextractors.LinkExtractor",
@@ -29,6 +32,7 @@ class BaseSgmlLinkExtractor(SGMLParser):
         self.process_value = (lambda v: v) if process_value is None else process_value
         self.current_link = None
         self.unique = unique
+        self.strip = strip
 
     def _extract_links(self, response_text, response_url, response_encoding, base_url=None):
         """ Do the real extraction work """
@@ -40,7 +44,7 @@ class BaseSgmlLinkExtractor(SGMLParser):
         if base_url is None:
             base_url = urljoin(response_url, self.base_url) if self.base_url else response_url
         for link in self.links:
-            if isinstance(link.url, unicode):
+            if isinstance(link.url, six.text_type):
                 link.url = link.url.encode(response_encoding)
             try:
                 link.url = urljoin(base_url, link.url)
@@ -78,6 +82,8 @@ class BaseSgmlLinkExtractor(SGMLParser):
         if self.scan_tag(tag):
             for attr, value in attrs:
                 if self.scan_attr(attr):
+                    if self.strip and value is not None:
+                        value = strip_html5_whitespace(value)
                     url = self.process_value(value)
                     if url is not None:
                         link = Link(url=url, nofollow=rel_has_nofollow(dict(attrs).get('rel')))
@@ -102,7 +108,8 @@ class SgmlLinkExtractor(FilteringLinkExtractor):
 
     def __init__(self, allow=(), deny=(), allow_domains=(), deny_domains=(), restrict_xpaths=(),
                  tags=('a', 'area'), attrs=('href',), canonicalize=True, unique=True,
-                 process_value=None, deny_extensions=None, restrict_css=()):
+                 process_value=None, deny_extensions=None, restrict_css=(),
+                 strip=True):
 
         warnings.warn(
             "SgmlLinkExtractor is deprecated and will be removed in future releases. "
@@ -117,15 +124,12 @@ class SgmlLinkExtractor(FilteringLinkExtractor):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', ScrapyDeprecationWarning)
             lx = BaseSgmlLinkExtractor(tag=tag_func, attr=attr_func,
-                unique=unique, process_value=process_value)
+                unique=unique, process_value=process_value, strip=strip)
 
         super(SgmlLinkExtractor, self).__init__(lx, allow=allow, deny=deny,
             allow_domains=allow_domains, deny_domains=deny_domains,
             restrict_xpaths=restrict_xpaths, restrict_css=restrict_css,
             canonicalize=canonicalize, deny_extensions=deny_extensions)
-
-        # FIXME: was added to fix a RegexLinkExtractor testcase
-        self.base_url = None
 
     def extract_links(self, response):
         base_url = None

@@ -62,7 +62,7 @@ locations, using the :meth:`~ItemLoader.add_xpath` method. This is the
 data that will be assigned to the ``name`` field later.
 
 Afterwards, similar calls are used for ``price`` and ``stock`` fields
-(the later using a CSS selector with the :meth:`~ItemLoader.add_css` method),
+(the latter using a CSS selector with the :meth:`~ItemLoader.add_css` method),
 and finally the ``last_update`` field is populated directly with a literal value
 (``today``) using a different method: :meth:`~ItemLoader.add_value`.
 
@@ -548,7 +548,7 @@ Example::
     # no need to call footer_loader.load_item()
     loader.load_item()
 
-You can nest loaders arbitrarilly and they work with either xpath or css selectors.
+You can nest loaders arbitrarily and they work with either xpath or css selectors.
 As a general guideline, use nested loaders when they make your code simpler but do
 not go overboard with nesting or your parser can become difficult to read.
 

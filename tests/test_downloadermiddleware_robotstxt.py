@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import re
 from twisted.internet import reactor, error
@@ -30,11 +31,18 @@ class RobotsTxtMiddlewareTest(unittest.TestCase):
     def _get_successful_crawler(self):
         crawler = self.crawler
         crawler.settings.set('ROBOTSTXT_OBEY', True)
-        ROBOTS = re.sub(b'^\s+(?m)', b'', b'''
+        ROBOTS = re.sub(b'^\s+(?m)', b'', u'''
         User-Agent: *
         Disallow: /admin/
         Disallow: /static/
-        ''')
+
+        # taken from https://en.wikipedia.org/robots.txt
+        Disallow: /wiki/K%C3%A4ytt%C3%A4j%C3%A4:
+        Disallow: /wiki/Käyttäjä:
+
+        User-Agent: UnicödeBöt
+        Disallow: /some/randome/page.html
+        '''.encode('utf-8'))
         response = TextResponse('http://site.local/robots.txt', body=ROBOTS)
         def return_response(request, spider):
             deferred = Deferred()
@@ -48,7 +56,9 @@ class RobotsTxtMiddlewareTest(unittest.TestCase):
         return DeferredList([
             self.assertNotIgnored(Request('http://site.local/allowed'), middleware),
             self.assertIgnored(Request('http://site.local/admin/main'), middleware),
-            self.assertIgnored(Request('http://site.local/static/'), middleware)
+            self.assertIgnored(Request('http://site.local/static/'), middleware),
+            self.assertIgnored(Request('http://site.local/wiki/K%C3%A4ytt%C3%A4j%C3%A4:'), middleware),
+            self.assertIgnored(Request(u'http://site.local/wiki/Käyttäjä:'), middleware)
         ], fireOnOneErrback=True)
 
     def test_robotstxt_ready_parser(self):
@@ -122,6 +132,18 @@ class RobotsTxtMiddlewareTest(unittest.TestCase):
         deferred = middleware.process_request(Request('http://site.local'), None)
         deferred.addCallback(lambda _: self.assertTrue(middleware._logerror.called))
         return deferred
+
+    def test_robotstxt_immediate_error(self):
+        self.crawler.settings.set('ROBOTSTXT_OBEY', True)
+        err = error.DNSLookupError('Robotstxt address not found')
+        def immediate_failure(request, spider):
+            deferred = Deferred()
+            deferred.errback(failure.Failure(err))
+            return deferred
+        self.crawler.engine.download.side_effect = immediate_failure
+
+        middleware = RobotsTxtMiddleware(self.crawler)
+        return self.assertNotIgnored(Request('http://site.local'), middleware)
 
     def test_ignore_robotstxt_request(self):
         self.crawler.settings.set('ROBOTSTXT_OBEY', True)

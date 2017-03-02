@@ -6,10 +6,6 @@ Scrapy
    :target: https://pypi.python.org/pypi/Scrapy
    :alt: PyPI Version
 
-.. image:: https://img.shields.io/pypi/dm/Scrapy.svg
-   :target: https://pypi.python.org/pypi/Scrapy
-   :alt: PyPI Monthly downloads
-
 .. image:: https://img.shields.io/travis/scrapy/scrapy/master.svg
    :target: http://travis-ci.org/scrapy/scrapy
    :alt: Build Status
@@ -17,14 +13,14 @@ Scrapy
 .. image:: https://img.shields.io/badge/wheel-yes-brightgreen.svg
    :target: https://pypi.python.org/pypi/Scrapy
    :alt: Wheel Status
-   
-.. image:: http://static.scrapy.org/py3progress/badge.svg
-   :target: https://github.com/scrapy/scrapy/wiki/Python-3-Porting
-   :alt: Python 3 Porting Status
 
 .. image:: https://img.shields.io/codecov/c/github/scrapy/scrapy/master.svg
    :target: http://codecov.io/github/scrapy/scrapy?branch=master
    :alt: Coverage report
+
+.. image:: https://anaconda.org/conda-forge/scrapy/badges/version.svg
+   :target: https://anaconda.org/conda-forge/scrapy
+   :alt: Conda Version
 
 
 Overview
@@ -40,7 +36,7 @@ http://scrapy.org
 Requirements
 ============
 
-* Python 2.7
+* Python 2.7 or Python 3.3+
 * Works on Linux, Windows, Mac OSX, BSD
 
 Install
@@ -74,6 +70,15 @@ Contributing
 ============
 
 See http://doc.scrapy.org/en/master/contributing.html
+
+Code of Conduct
+---------------
+
+Please note that this project is released with a Contributor Code of Conduct
+(see https://github.com/scrapy/scrapy/blob/master/CODE_OF_CONDUCT.md).
+
+By participating in this project you agree to abide by its terms.
+Please report unacceptable behavior to opensource@scrapinghub.com.
 
 Companies using Scrapy
 ======================

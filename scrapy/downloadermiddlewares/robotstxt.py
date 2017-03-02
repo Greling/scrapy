@@ -13,6 +13,7 @@ from scrapy.exceptions import NotConfigured, IgnoreRequest
 from scrapy.http import Request
 from scrapy.utils.httpobj import urlparse_cached
 from scrapy.utils.log import failure_to_exc_info
+from scrapy.utils.python import to_native_str
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,8 @@ class RobotsTxtMiddleware(object):
         return d
 
     def process_request_2(self, rp, request, spider):
-        if rp is not None and not rp.can_fetch(self._useragent, request.url):
+        if rp is not None and not rp.can_fetch(
+                 to_native_str(self._useragent), request.url):
             logger.debug("Forbidden by robots.txt: %(request)s",
                          {'request': request}, extra={'spider': spider})
             raise IgnoreRequest()
@@ -83,8 +85,8 @@ class RobotsTxtMiddleware(object):
     def _parse_robots(self, response, netloc):
         rp = robotparser.RobotFileParser(response.url)
         body = ''
-        if hasattr(response, 'body_as_unicode'):
-            body = response.body_as_unicode()
+        if hasattr(response, 'text'):
+            body = response.text
         else: # last effort try
             try:
                 body = response.body.decode('utf-8')
@@ -94,11 +96,15 @@ class RobotsTxtMiddleware(object):
                 # Running rp.parse() will set rp state from
                 # 'disallow all' to 'allow any'.
                 pass
-        rp.parse(body.splitlines())
+        # stdlib's robotparser expects native 'str' ;
+        # with unicode input, non-ASCII encoded bytes decoding fails in Python2
+        rp.parse(to_native_str(body).splitlines())
 
         rp_dfd = self._parsers[netloc]
         self._parsers[netloc] = rp
         rp_dfd.callback(rp)
 
     def _robots_error(self, failure, netloc):
-        self._parsers.pop(netloc).callback(None)
+        rp_dfd = self._parsers[netloc]
+        self._parsers[netloc] = None
+        rp_dfd.callback(None)

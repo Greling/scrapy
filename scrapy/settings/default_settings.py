@@ -18,6 +18,8 @@ import sys
 from importlib import import_module
 from os.path import join, abspath, dirname
 
+import six
+
 AJAXCRAWL_ENABLED = False
 
 AUTOTHROTTLE_ENABLED = False
@@ -77,10 +79,14 @@ DOWNLOAD_TIMEOUT = 180      # 3mins
 DOWNLOAD_MAXSIZE = 1024*1024*1024   # 1024m
 DOWNLOAD_WARNSIZE = 32*1024*1024    # 32m
 
+DOWNLOAD_FAIL_ON_DATALOSS = True
+
 DOWNLOADER = 'scrapy.core.downloader.Downloader'
 
 DOWNLOADER_HTTPCLIENTFACTORY = 'scrapy.core.downloader.webclient.ScrapyHTTPClientFactory'
 DOWNLOADER_CLIENTCONTEXTFACTORY = 'scrapy.core.downloader.contextfactory.ScrapyClientContextFactory'
+DOWNLOADER_CLIENT_TLS_METHOD = 'TLS' # Use highest TLS/SSL protocol version supported by the platform,
+                                     # also allowing negotiation
 
 DOWNLOADER_MIDDLEWARES = {}
 
@@ -89,16 +95,15 @@ DOWNLOADER_MIDDLEWARES_BASE = {
     'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': 100,
     'scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware': 300,
     'scrapy.downloadermiddlewares.downloadtimeout.DownloadTimeoutMiddleware': 350,
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 400,
-    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 500,
-    'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware': 550,
+    'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware': 400,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 500,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,
     'scrapy.downloadermiddlewares.ajaxcrawl.AjaxCrawlMiddleware': 560,
     'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': 580,
     'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 590,
     'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 600,
     'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 750,
-    'scrapy.downloadermiddlewares.chunked.ChunkedTransferMiddleware': 830,
     'scrapy.downloadermiddlewares.stats.DownloaderStats': 850,
     'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
     # Downloader side
@@ -120,7 +125,7 @@ EXTENSIONS = {}
 
 EXTENSIONS_BASE = {
     'scrapy.extensions.corestats.CoreStats': 0,
-    'scrapy.telnet.TelnetConsole': 0,
+    'scrapy.extensions.telnet.TelnetConsole': 0,
     'scrapy.extensions.memusage.MemoryUsage': 0,
     'scrapy.extensions.memdebug.MemoryDebugger': 0,
     'scrapy.extensions.closespider.CloseSpider': 0,
@@ -130,10 +135,12 @@ EXTENSIONS_BASE = {
     'scrapy.extensions.throttle.AutoThrottle': 0,
 }
 
+FEED_TEMPDIR = None
 FEED_URI = None
 FEED_URI_PARAMS = None  # a function to extend uri arguments
 FEED_FORMAT = 'jsonlines'
 FEED_STORE_EMPTY = False
+FEED_EXPORT_ENCODING = None
 FEED_EXPORT_FIELDS = None
 FEED_STORAGES = {}
 FEED_STORAGES_BASE = {
@@ -154,6 +161,12 @@ FEED_EXPORTERS_BASE = {
     'pickle': 'scrapy.exporters.PickleItemExporter',
 }
 
+FILES_STORE_S3_ACL = 'private'
+
+FTP_USER = 'anonymous'
+FTP_PASSWORD = 'guest'
+FTP_PASSIVE_MODE = True
+
 HTTPCACHE_ENABLED = False
 HTTPCACHE_DIR = 'httpcache'
 HTTPCACHE_IGNORE_MISSING = False
@@ -163,9 +176,14 @@ HTTPCACHE_ALWAYS_STORE = False
 HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_IGNORE_SCHEMES = ['file']
 HTTPCACHE_IGNORE_RESPONSE_CACHE_CONTROLS = []
-HTTPCACHE_DBM_MODULE = 'anydbm'
+HTTPCACHE_DBM_MODULE = 'anydbm' if six.PY2 else 'dbm'
 HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.DummyPolicy'
 HTTPCACHE_GZIP = False
+
+HTTPPROXY_ENABLED = True
+HTTPPROXY_AUTH_ENCODING = 'latin-1'
+
+IMAGES_STORE_S3_ACL = 'private'
 
 ITEM_PROCESSOR = 'scrapy.pipelines.ItemPipelineManager'
 
@@ -180,8 +198,9 @@ LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
 LOG_STDOUT = False
 LOG_LEVEL = 'DEBUG'
 LOG_FILE = None
+LOG_SHORT_NAMES = False
 
-LOG_UNSERIALIZABLE_REQUESTS = False
+SCHEDULER_DEBUG = False
 
 LOGSTATS_INTERVAL = 60.0
 
@@ -195,7 +214,7 @@ MEMDEBUG_ENABLED = False        # enable memory debugging
 MEMDEBUG_NOTIFY = []            # send memory debugging report by mail at engine shutdown
 
 MEMUSAGE_CHECK_INTERVAL_SECONDS = 60.0
-MEMUSAGE_ENABLED = False
+MEMUSAGE_ENABLED = True
 MEMUSAGE_LIMIT_MB = 0
 MEMUSAGE_NOTIFY_MAIL = []
 MEMUSAGE_REPORT = False
@@ -226,6 +245,7 @@ ROBOTSTXT_OBEY = False
 SCHEDULER = 'scrapy.core.scheduler.Scheduler'
 SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleLifoDiskQueue'
 SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.LifoMemoryQueue'
+SCHEDULER_PRIORITY_QUEUE = 'queuelib.PriorityQueue'
 
 SPIDER_LOADER_CLASS = 'scrapy.spiderloader.SpiderLoader'
 
